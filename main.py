@@ -1,3 +1,5 @@
+import os
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -7,7 +9,12 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"], 
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "https://frontend-langchain-sq-lite.vercel.app",
+        "*"  # Allow all origins for HF Spaces
+    ],
     allow_credentials=True,
     allow_methods=["*"],  
     allow_headers=["*"],  
@@ -83,9 +90,8 @@ async def get_answer(request: AnswerRequest):
 def read_root():
     return {"status": "success", "message": "API conectada a 0.0.0.0"}
 
-# --- AÑADE ESTO AL FINAL ---
 if __name__ == "__main__":
-    # Render asigna un puerto en la variable de entorno PORT
-    port = int(os.environ.get("PORT", 8000))
-    # Forzamos el host a 0.0.0.0 para que sea accesible externamente
+    # HF Spaces y otros servicios usan PORT env variable
+    # HF Spaces usa 7860 por defecto
+    port = int(os.environ.get("PORT", 7860))
     uvicorn.run(app, host="0.0.0.0", port=port)
