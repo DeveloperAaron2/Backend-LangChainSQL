@@ -9,13 +9,8 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://frontend-langchain-sq-lite.vercel.app",
-        "*"  # Allow all origins for HF Spaces
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins (suitable for public API)
+    allow_credentials=False,  # Must be False when allow_origins is ["*"]
     allow_methods=["*"],  
     allow_headers=["*"],  
 )
