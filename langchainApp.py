@@ -12,7 +12,7 @@ from langchain_core.messages import HumanMessage
 
 from langchain_community.utilities import SQLDatabase
 
-sqlite_db_path = "data/street_tree_db.sqlite"
+sqlite_db_path = "data/car_dataset.sqlite"
 
 db = SQLDatabase.from_uri(f"sqlite:///{sqlite_db_path}")
 
@@ -105,4 +105,56 @@ def getHumanAnswer(question, result):
     chain = answer_prompt | llm | StrOutputParser()
     response = chain.invoke({"question": question, "result": str(result)})
     return response
+
+
+
+def getColumns():
+    """Get top 10 rows from the table with all columns"""
+    import ast
+    
+    try:
+        tables = db.get_usable_table_names()
+        if not tables:
+            return {"error": "No tables found in database", "columns": [], "rows": []}
+        
+        table_name = tables[0] 
+        
+        query = f"SELECT * FROM {table_name} LIMIT 10"
+        result_str = db.run(query)
+        
+        if result_str.startswith('['):
+            try:
+                result_data = ast.literal_eval(result_str)
+            except:
+                return {"raw": result_str, "columns": [], "rows": []}
+            
+            if isinstance(result_data, list) and len(result_data) > 0:
+                # Get column names using PRAGMA table_info - most reliable method
+                pragma_query = f"PRAGMA table_info({table_name})"
+                pragma_result = db.run(pragma_query)
+                
+                # Parse PRAGMA result to get column names
+                # PRAGMA returns: (cid, name, type, notnull, dflt_value, pk)
+                try:
+                    pragma_data = ast.literal_eval(pragma_result)
+                    # Extract column names from position 1 of each tuple
+                    columns = [col[1] for col in pragma_data]
+                except:
+                    # Fallback: use generic column names
+                    num_cols = len(result_data[0]) if isinstance(result_data[0], tuple) else 1
+                    columns = [f"Column_{i+1}" for i in range(num_cols)]
+                
+                rows = [list(row) if isinstance(row, tuple) else [row] for row in result_data]
+                
+                return {
+                    "table_name": table_name,
+                    "columns": columns,
+                    "rows": rows,
+                    "count": len(rows)
+                }
+        
+        return {"raw": result_str, "columns": [], "rows": []}
+        
+    except Exception as e:
+        return {"error": str(e), "columns": [], "rows": []}
 

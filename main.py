@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from langchainApp import getSqlQuery, getSqlTable, getHumanAnswer
+from langchainApp import getSqlQuery, getSqlTable, getHumanAnswer, getColumns
 
 app = FastAPI()
 
@@ -77,6 +77,19 @@ async def get_answer(request: AnswerRequest):
         human_answer = getHumanAnswer(request.query, request.result)
         return {
             "human_answer": human_answer
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+@app.get("/get-columns")
+async def get_columns():
+    try:
+        columns = getColumns()
+        return {
+            "columns": columns
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
